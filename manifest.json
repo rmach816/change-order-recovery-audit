@@ -1,9 +1,10 @@
 {
-  "manifest_version": "0.3",
+  "$schema": "https://raw.githubusercontent.com/anthropics/mcpb/main/schemas/mcpb-manifest-v0.4.schema.json",
+  "manifest_version": "0.4",
   "name": "change-order-recovery-audit",
   "display_name": "Change Order Recovery Audit",
   "icon": "assets/icon.png",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Find cited change-order records that may be unpriced, unsigned, aging, contradictory, or apparently unbilled.",
   "long_description": "A private, read-only second-opinion audit for one construction project folder. Project files stay on the user's computer. Results require human review and do not determine entitlement or guarantee recovery.",
   "author": {

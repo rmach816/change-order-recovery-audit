@@ -299,6 +299,22 @@ test("a consumed trial blocks at entitlement before an invalid project path can 
   }
 });
 
+test("an unpaid installation fails closed as subscription required, not as a provider outage", async () => {
+  const store = memoryStore();
+  const state = await loadOrCreateState(store);
+  state.trialCompleted = true;
+  await store.save(state);
+  const result = await authorizeAudit({
+    store,
+    environment: { LICENSE_SERVICE_URL: "https://recoveryaudit.m2ai.tech", APP_MODE: "live" } as NodeJS.ProcessEnv,
+    now: new Date("2026-08-28T17:30:00.000Z"),
+    fetcher: async () => new Response(JSON.stringify({ error: "Access could not be verified" }), { status: 403 })
+  });
+  assert.equal(result.allowed, false);
+  assert.equal(result.source, "blocked");
+  assert.equal(result.message, "An active subscription is required before the folder can be read.");
+});
+
 test("recovery tokens and installation signatures reject tampering before any Stripe call", async () => {
   const token = createRecoveryToken({ version: 1, customerId: "cus_123", subscriptionId: "sub_123", issuedAt: "2026-08-27T00:00:00.000Z" }, testConfig.signingSecret);
   assert.equal(verifyRecoveryToken(token, testConfig.signingSecret)?.subscriptionId, "sub_123");
@@ -556,6 +572,8 @@ test("static public routes carry accurate metadata and crawler boundaries", asyn
   const reviewerGuide = await readFile(new URL("../docs/reviewer-guide.md", import.meta.url), "utf8");
   const security = await readFile(new URL("../SECURITY.md", import.meta.url), "utf8");
   const manifest = JSON.parse(await readFile(new URL("../manifest.json", import.meta.url), "utf8")) as {
+    manifest_version: string;
+    version: string;
     server: { mcp_config: { env: Record<string, string> } };
     tools: Array<{ name: string }>;
     privacy_policies: string[];
@@ -568,7 +586,7 @@ test("static public routes carry accurate metadata and crawler boundaries", asyn
   assert.match(landing, /Download for Windows/);
   assert.match(landing, /fetch\("\/api\/checkout"/);
   assert.doesNotMatch(landing, /fetch\("\/api\/billing"/);
-  assert.match(landing, /github\.com\/rmach816\/change-order-recovery-audit\/releases\/download\/v1\.0\.0\/claude-change-order-recovery-audit\.mcpb/);
+  assert.match(landing, /github\.com\/rmach816\/change-order-recovery-audit\/releases\/download\/v1\.0\.1\/claude-change-order-recovery-audit\.mcpb/);
   assert.match(landing, /src="\/icon\.png"/);
   assert.match(landing, /Skip to main content/);
   assert.match(robots, /Disallow: \/api\//);
@@ -580,6 +598,8 @@ test("static public routes carry accurate metadata and crawler boundaries", asyn
   assert.match(styles, /prefers-reduced-motion:reduce/);
   assert.equal(manifest.server.mcp_config.env.LICENSE_SERVICE_URL, "https://recoveryaudit.m2ai.tech");
   assert.equal(manifest.server.mcp_config.env.APP_MODE, "live");
+  assert.equal(manifest.manifest_version, "0.4");
+  assert.equal(manifest.version, "1.0.1");
   assert.deepEqual(manifest.privacy_policies, ["https://recoveryaudit.m2ai.tech/privacy"]);
   assert.deepEqual(manifest.tools.map((tool) => tool.name), ["audit_change_order_folder", "manage_change_order_subscription"]);
   assert.match(readme, /^## Privacy Policy$/m);

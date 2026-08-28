@@ -275,6 +275,17 @@ async function callValidation(
       body: JSON.stringify({ mode, ...proof, ...(recoveryKey ? { recoveryKey } : {}) }),
       signal: controller.signal
     });
+    // The live service deliberately returns 403 for a valid installation that
+    // has no matching paid subscription. That is an ordinary inactive state,
+    // not a provider outage; access still fails closed below.
+    if (response.status === 403) {
+      return {
+        allowed: false,
+        state: "inactive",
+        paidThrough: new Date(0).toISOString(),
+        checkedAt: now.toISOString()
+      };
+    }
     if (!response.ok) throw new Error("Licensing service rejected validation");
     const payload: unknown = await response.json();
     if (typeof payload !== "object" || payload === null) throw new Error("Licensing service returned an invalid response");

@@ -66,7 +66,7 @@ function activationUrl(state: { activationId: string; publicKey: string }, envir
 export function createServer(projectRoot: string, options: CreateServerOptions = {}): McpServer {
   const server = new McpServer({
     name: "change-order-recovery-audit",
-    version: "1.0.0"
+    version: "1.0.1"
   });
 
   server.registerTool(
