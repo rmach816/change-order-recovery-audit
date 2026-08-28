@@ -1,0 +1,15 @@
+src/**
+tests/**
+fixtures/**
+docs/**
+!docs/reviewer-guide.md
+api/**
+public/**
+dist/api/**
+vercel.json
+dist/tests/**
+coverage/**
+*.mcpb
+tsconfig.json
+.gitignore
+.vercel/**

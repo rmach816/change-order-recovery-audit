@@ -1,0 +1,6 @@
+Record,Date,Status,Amount,Billing note
+Change Order CO-101,2026-06-10,Approved by owner,"$12,500.00",Not invoiced
+Change Order CO-102,2026-01-10,Pending approval,,
+Change Order CO-103,2026-05-01,Approved,"$4,200.00",
+Change Order CO-103,2026-05-03,Rejected by client,"$4,200.00",
+Change Order CO-104,2026-07-01,Approved,"$3,000.00",Invoiced on pay app #8

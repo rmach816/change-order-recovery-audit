@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Manage Billing | Change Order Recovery Audit</title>
+    <meta
+      name="description"
+      content="Open the billing portal for Change Order Recovery Audit."
+    />
+    <meta name="robots" content="noindex" />
+    <link rel="canonical" href="https://recoveryaudit.m2ai.tech/manage" />
+    <link rel="icon" href="/icon.png" type="image/png" />
+    <link rel="stylesheet" href="/site.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to main content</a>
+    <header>
+      <div class="shell nav">
+        <a class="brand" href="/"
+          ><img src="/icon.png" alt="" />Change Order Recovery Audit</a
+        >
+        <nav class="nav-links" aria-label="Main navigation">
+          <a href="/support">Support</a><a href="/privacy">Privacy</a>
+        </nav>
+      </div>
+    </header>
+    <main id="main-content" tabindex="-1" class="shell page">
+      <p class="eyebrow">BILLING SELF-SERVICE</p>
+      <h1>Manage your subscription</h1>
+      <p>
+        On the purchasing computer, rerun the Claude extension and use its
+        billing action. On another computer, enter the recovery/company key from
+        your payment confirmation to open Stripe's secure customer portal.
+      </p>
+      <form class="manage-form" id="portal-form">
+        <label for="recovery-key">Recovery or company key</label
+        ><input
+          id="recovery-key"
+          name="recovery-key"
+          autocomplete="off"
+          spellcheck="false"
+          required
+        /><button type="submit">Open secure billing portal</button>
+      </form>
+      <p class="status" id="portal-status" role="status"></p>
+      <p>
+        If you do not have the key, contact
+        <a href="mailto:richard@m2ai.tech">richard@m2ai.tech</a>.
+      </p>
+    </main>
+    <footer>
+      <div class="shell foot">
+        <span>© 2026 M2 AI, LLC</span>
+        <nav><a href="/terms">Terms</a><a href="/privacy">Privacy</a></nav>
+      </div>
+    </footer>
+    <script>
+      document
+        .getElementById("portal-form")
+        .addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const status = document.getElementById("portal-status"),
+            key = document.getElementById("recovery-key").value;
+          status.textContent = "Opening secure billing portal…";
+          try {
+            const response = await fetch("/api/billing", {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ action: "portal", recoveryKey: key }),
+              }),
+              result = await response.json();
+            if (!response.ok || !result.url) throw Error();
+            location.assign(result.url);
+          } catch {
+            status.textContent =
+              "The billing portal could not be opened. Check the key or contact support.";
+            status.dataset.kind = "error";
+          }
+        });
+    </script>
+  </body>
+</html>

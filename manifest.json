@@ -1,0 +1,63 @@
+{
+  "manifest_version": "0.3",
+  "name": "change-order-recovery-audit",
+  "display_name": "Change Order Recovery Audit",
+  "icon": "assets/icon.png",
+  "version": "1.0.0",
+  "description": "Find cited change-order records that may be unpriced, unsigned, aging, contradictory, or apparently unbilled.",
+  "long_description": "A private, read-only second-opinion audit for one construction project folder. Project files stay on the user's computer. Results require human review and do not determine entitlement or guarantee recovery.",
+  "author": {
+    "name": "M2 AI, LLC",
+    "email": "richard@m2ai.tech"
+  },
+  "server": {
+    "type": "node",
+    "entry_point": "dist/src/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/src/index.js"],
+      "env": {
+        "PROJECT_ROOT": "${user_config.project_directory}",
+        "LICENSE_KEY": "${user_config.license_key}",
+        "LICENSE_SERVICE_URL": "https://recoveryaudit.m2ai.tech",
+        "APP_MODE": "live"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "audit_change_order_folder",
+      "description": "Read one configured project folder and return cited possible change-order exposure for human review."
+    },
+    {
+      "name": "manage_change_order_subscription",
+      "description": "Open the Stripe billing portal for the purchasing computer without reading the configured project folder."
+    }
+  ],
+  "keywords": ["construction", "change orders", "billing", "audit", "recovery"],
+  "license": "Apache-2.0",
+  "privacy_policies": ["https://recoveryaudit.m2ai.tech/privacy"],
+  "compatibility": {
+    "claude_desktop": ">=1.0.0",
+    "platforms": ["win32"],
+    "runtimes": {
+      "node": ">=20.16"
+    }
+  },
+  "user_config": {
+    "project_directory": {
+      "type": "directory",
+      "title": "Project folder",
+      "description": "Select the single project folder this read-only audit may access.",
+      "multiple": false,
+      "required": true
+    },
+    "license_key": {
+      "type": "string",
+      "title": "Recovery or company key (optional)",
+      "description": "Optional only for another computer or support recovery. The purchasing computer activates automatically after payment.",
+      "required": false,
+      "sensitive": true
+    }
+  }
+}
