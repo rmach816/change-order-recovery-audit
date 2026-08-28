@@ -222,7 +222,7 @@
           button.disabled = true;
           status.textContent = "Opening secure Checkout…";
           try {
-            const response = await fetch("/api/billing", {
+            const response = await fetch("/api/checkout", {
               method: "POST",
               headers: { "content-type": "application/json" },
               body: JSON.stringify({

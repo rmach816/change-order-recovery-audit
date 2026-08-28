@@ -8,6 +8,7 @@ import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 
 import { POST as billingHandler } from "../api/billing.js";
+import { POST as checkoutHandler } from "../api/checkout.js";
 import { GET as activateHandler } from "../api/activate.js";
 import { authorizeSubscription, configFrom, portalIdempotencyKey, readBody, subscriptionMatchesConfiguration } from "../api/_lib.js";
 import {
@@ -565,6 +566,8 @@ test("static public routes carry accurate metadata and crawler boundaries", asyn
   assert.match(landing, /\$99/);
   assert.match(landing, /Windows/);
   assert.match(landing, /Download for Windows/);
+  assert.match(landing, /fetch\("\/api\/checkout"/);
+  assert.doesNotMatch(landing, /fetch\("\/api\/billing"/);
   assert.match(landing, /github\.com\/rmach816\/change-order-recovery-audit\/releases\/download\/v1\.0\.0\/claude-change-order-recovery-audit\.mcpb/);
   assert.match(landing, /src="\/icon\.png"/);
   assert.match(landing, /Skip to main content/);
@@ -592,4 +595,13 @@ test("static public routes carry accurate metadata and crawler boundaries", asyn
   assert.match(reviewerGuide, /manage_change_order_subscription/);
   assert.match(reviewerGuide, /CORA_REVIEWER_ENTITLEMENT_TOKEN/);
   assert.match(security, /richard@m2ai\.tech/);
+});
+
+test("browser-safe Checkout alias uses the guarded billing handler", async () => {
+  const response = await checkoutHandler(new Request("https://example.test/api/checkout", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ action: "checkout" })
+  }));
+  assert.equal(response.status, 503);
 });
