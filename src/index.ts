@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { pathToFileURL } from "node:url";
+import { realpathSync } from "node:fs";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { z } from "zod";
 
 import { auditFolder } from "./audit.js";
@@ -89,7 +90,7 @@ function activationUrl(state: { activationId: string; publicKey: string }, envir
 export function createServer(projectRoot: string, options: CreateServerOptions = {}): McpServer {
   const server = new McpServer({
     name: "change-order-recovery-audit",
-    version: "1.0.2"
+    version: "1.0.3"
   });
 
   server.registerTool(
@@ -191,9 +192,33 @@ async function main(): Promise<void> {
   console.error("Change Order Recovery Audit MCP server is running over stdio.");
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+// Claude Desktop on Windows may launch the entry point through a host wrapper
+// or an alternate spelling of the same path (8.3 short name, different drive
+// case), so a path comparison alone cannot decide whether this module is the
+// entry point. The manifest's --project-root argument is the launch signature:
+// it is always present when a host starts the server and never present when
+// tests import this module.
+function isMainModule(argv1: string | undefined): boolean {
+  if (!argv1) return false;
+  try {
+    const canonicalArgv = pathToFileURL(realpathSync.native(argv1)).href;
+    const canonicalModule = pathToFileURL(realpathSync.native(fileURLToPath(import.meta.url))).href;
+    return canonicalArgv.toLowerCase() === canonicalModule.toLowerCase();
+  } catch {
+    return pathToFileURL(argv1).href === import.meta.url;
+  }
+}
+
+function isDirectLaunch(): boolean {
+  return process.argv.slice(1).some((argument) => argument.startsWith("--project-root=")) || isMainModule(process.argv[1]);
+}
+
+if (isDirectLaunch()) {
+  console.error(`[change-order-recovery-audit] entry launched; argv=${JSON.stringify(process.argv)}`);
   main().catch((error: unknown) => {
     console.error(error instanceof Error ? error.message : String(error));
     process.exitCode = 1;
   });
+} else {
+  console.error(`[change-order-recovery-audit] loaded as library (no --project-root argument and path mismatch); argv=${JSON.stringify(process.argv)}`);
 }

@@ -599,7 +599,7 @@ test("static public routes carry accurate metadata and crawler boundaries", asyn
   assert.equal(manifest.server.mcp_config.env.LICENSE_SERVICE_URL, "https://recoveryaudit.m2ai.tech");
   assert.equal(manifest.server.mcp_config.env.APP_MODE, "live");
   assert.equal(manifest.manifest_version, "0.4");
-  assert.equal(manifest.version, "1.0.2");
+  assert.equal(manifest.version, "1.0.3");
   assert.deepEqual(manifest.server.mcp_config.args.slice(1), [
     "--project-root=${user_config.project_directory}",
     "--license-service-url=https://recoveryaudit.m2ai.tech",

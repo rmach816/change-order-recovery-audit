@@ -2,7 +2,6 @@ import { extname } from "node:path";
 
 import ExcelJS from "exceljs";
 import mammoth from "mammoth";
-import { PDFParse } from "pdf-parse";
 
 import { MAX_TEXT_CHARACTERS } from "./limits.js";
 import type { ExtractedSource } from "./types.js";
@@ -41,7 +40,39 @@ function source(
   };
 }
 
+let pdfParseLoader: Promise<typeof import("pdf-parse")> | undefined;
+
+// Claude Desktop runs extensions in an Electron utility process, where module
+// resolution prefers pdf-parse's browser build and pdfjs mistakes the process
+// for a browser (process.type is set), skipping its Node polyfills and then
+// crashing on missing DOM globals such as DOMMatrix. Load pdf-parse's Node
+// build by file URL, and evaluate pdfjs while process.type is hidden so it
+// takes its Node path; process.type is restored afterwards. Loading lazily
+// also keeps server startup independent of the PDF engine.
+function loadPdfParse(): Promise<typeof import("pdf-parse")> {
+  pdfParseLoader ??= (async () => {
+    const descriptor = Object.getOwnPropertyDescriptor(process, "type");
+    try {
+      if (descriptor?.configurable) delete (process as { type?: unknown }).type;
+      const resolved = import.meta.resolve("pdf-parse");
+      const marker = "dist/pdf-parse/";
+      const markerIndex = resolved.indexOf(marker);
+      const nodeBuildUrl = markerIndex >= 0 ? `${resolved.slice(0, markerIndex + marker.length)}esm/index.js` : resolved;
+      const loaded = (await import(nodeBuildUrl)) as typeof import("pdf-parse");
+      const pdfjsUrl = import.meta.resolve("pdfjs-dist/legacy/build/pdf.mjs");
+      await import(pdfjsUrl);
+      return loaded;
+    } finally {
+      if (descriptor?.configurable && descriptor.value !== undefined) {
+        Object.defineProperty(process, "type", descriptor);
+      }
+    }
+  })();
+  return pdfParseLoader;
+}
+
 async function extractPdf(input: ExtractInput): Promise<ExtractedSource[]> {
+  const { PDFParse } = await loadPdfParse();
   const parser = new PDFParse({
     data: new Uint8Array(input.buffer),
     stopAtErrors: true,
