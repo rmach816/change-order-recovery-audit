@@ -50,6 +50,29 @@ export interface CreateServerOptions {
   auditFolder?: typeof auditFolder;
 }
 
+function argumentValue(arguments_: string[], name: string): string | undefined {
+  const prefix = `${name}=`;
+  const value = arguments_.find((argument) => argument.startsWith(prefix))?.slice(prefix.length).trim();
+  return value && !value.includes("${") ? value : undefined;
+}
+
+function configuredValue(value: string | undefined): string | undefined {
+  const normalized = value?.trim();
+  return normalized && !normalized.includes("${") ? normalized : undefined;
+}
+
+export function resolveRuntimeEnvironment(
+  environment: NodeJS.ProcessEnv = process.env,
+  arguments_: string[] = process.argv.slice(2)
+): NodeJS.ProcessEnv {
+  return {
+    ...environment,
+    PROJECT_ROOT: configuredValue(environment.PROJECT_ROOT) ?? argumentValue(arguments_, "--project-root"),
+    LICENSE_SERVICE_URL: configuredValue(environment.LICENSE_SERVICE_URL) ?? argumentValue(arguments_, "--license-service-url"),
+    APP_MODE: configuredValue(environment.APP_MODE) ?? argumentValue(arguments_, "--app-mode")
+  };
+}
+
 function activationUrl(state: { activationId: string; publicKey: string }, environment: NodeJS.ProcessEnv): string | undefined {
   const base = environment.LICENSE_SERVICE_URL?.trim();
   if (!base) return undefined;
@@ -66,7 +89,7 @@ function activationUrl(state: { activationId: string; publicKey: string }, envir
 export function createServer(projectRoot: string, options: CreateServerOptions = {}): McpServer {
   const server = new McpServer({
     name: "change-order-recovery-audit",
-    version: "1.0.1"
+    version: "1.0.2"
   });
 
   server.registerTool(
@@ -156,13 +179,14 @@ export function createServer(projectRoot: string, options: CreateServerOptions =
 }
 
 async function main(): Promise<void> {
-  const projectRoot = process.env.PROJECT_ROOT?.trim();
+  const environment = resolveRuntimeEnvironment();
+  const projectRoot = environment.PROJECT_ROOT;
   if (!projectRoot) {
     console.error("PROJECT_ROOT is required. Select a project folder in the extension settings.");
     process.exitCode = 1;
     return;
   }
-  const server = createServer(projectRoot);
+  const server = createServer(projectRoot, { environment });
   await server.connect(new StdioServerTransport());
   console.error("Change Order Recovery Audit MCP server is running over stdio.");
 }

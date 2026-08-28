@@ -4,7 +4,7 @@
   "name": "change-order-recovery-audit",
   "display_name": "Change Order Recovery Audit",
   "icon": "assets/icon.png",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Find cited change-order records that may be unpriced, unsigned, aging, contradictory, or apparently unbilled.",
   "long_description": "A private, read-only second-opinion audit for one construction project folder. Project files stay on the user's computer. Results require human review and do not determine entitlement or guarantee recovery.",
   "author": {
@@ -16,7 +16,12 @@
     "entry_point": "dist/src/index.js",
     "mcp_config": {
       "command": "node",
-      "args": ["${__dirname}/dist/src/index.js"],
+      "args": [
+        "${__dirname}/dist/src/index.js",
+        "--project-root=${user_config.project_directory}",
+        "--license-service-url=https://recoveryaudit.m2ai.tech",
+        "--app-mode=live"
+      ],
       "env": {
         "PROJECT_ROOT": "${user_config.project_directory}",
         "LICENSE_KEY": "${user_config.license_key}",

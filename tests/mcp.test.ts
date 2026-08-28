@@ -7,7 +7,22 @@ import test from "node:test";
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 
-import { createServer } from "../src/index.js";
+import { createServer, resolveRuntimeEnvironment } from "../src/index.js";
+
+test("uses non-secret manifest arguments when Claude Desktop omits MCPB environment values", () => {
+  const environment = resolveRuntimeEnvironment(
+    { LICENSE_KEY: "kept-in-environment" } as NodeJS.ProcessEnv,
+    [
+      "--project-root=D:\\Projects\\Demo",
+      "--license-service-url=https://recoveryaudit.m2ai.tech",
+      "--app-mode=live"
+    ]
+  );
+  assert.equal(environment.PROJECT_ROOT, "D:\\Projects\\Demo");
+  assert.equal(environment.LICENSE_SERVICE_URL, "https://recoveryaudit.m2ai.tech");
+  assert.equal(environment.APP_MODE, "live");
+  assert.equal(environment.LICENSE_KEY, "kept-in-environment");
+});
 
 test("exposes the audit and billing-management workflows and returns structured cited findings over MCP", async () => {
   const root = await mkdtemp(join(tmpdir(), "change-order-mcp-"));

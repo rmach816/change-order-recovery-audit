@@ -574,7 +574,7 @@ test("static public routes carry accurate metadata and crawler boundaries", asyn
   const manifest = JSON.parse(await readFile(new URL("../manifest.json", import.meta.url), "utf8")) as {
     manifest_version: string;
     version: string;
-    server: { mcp_config: { env: Record<string, string> } };
+    server: { mcp_config: { args: string[]; env: Record<string, string> } };
     tools: Array<{ name: string }>;
     privacy_policies: string[];
   };
@@ -586,7 +586,7 @@ test("static public routes carry accurate metadata and crawler boundaries", asyn
   assert.match(landing, /Download for Windows/);
   assert.match(landing, /fetch\("\/api\/checkout"/);
   assert.doesNotMatch(landing, /fetch\("\/api\/billing"/);
-  assert.match(landing, /github\.com\/rmach816\/change-order-recovery-audit\/releases\/download\/v1\.0\.1\/claude-change-order-recovery-audit\.mcpb/);
+  assert.match(landing, /github\.com\/rmach816\/change-order-recovery-audit\/releases\/download\/v1\.0\.2\/claude-change-order-recovery-audit\.mcpb/);
   assert.match(landing, /src="\/icon\.png"/);
   assert.match(landing, /Skip to main content/);
   assert.match(robots, /Disallow: \/api\//);
@@ -599,7 +599,13 @@ test("static public routes carry accurate metadata and crawler boundaries", asyn
   assert.equal(manifest.server.mcp_config.env.LICENSE_SERVICE_URL, "https://recoveryaudit.m2ai.tech");
   assert.equal(manifest.server.mcp_config.env.APP_MODE, "live");
   assert.equal(manifest.manifest_version, "0.4");
-  assert.equal(manifest.version, "1.0.1");
+  assert.equal(manifest.version, "1.0.2");
+  assert.deepEqual(manifest.server.mcp_config.args.slice(1), [
+    "--project-root=${user_config.project_directory}",
+    "--license-service-url=https://recoveryaudit.m2ai.tech",
+    "--app-mode=live"
+  ]);
+  assert.ok(!manifest.server.mcp_config.args.some((argument: string) => argument.includes("license_key")));
   assert.deepEqual(manifest.privacy_policies, ["https://recoveryaudit.m2ai.tech/privacy"]);
   assert.deepEqual(manifest.tools.map((tool) => tool.name), ["audit_change_order_folder", "manage_change_order_subscription"]);
   assert.match(readme, /^## Privacy Policy$/m);
