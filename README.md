@@ -25,7 +25,7 @@ Download the versioned release asset from the [v1.0.2 release](https://github.co
 
 On the purchasing computer, Claude can also open the Stripe billing portal through the `manage_change_order_subscription` tool. It signs a fresh local installation proof and does not read the selected project folder.
 
-The official managed build provides hosted entitlement, automatic updates, and support. The source is Apache-2.0; M2 AI names and branding are not granted by that license.
+The official managed build provides hosted entitlement, automatic updates, and support. The source is MIT-licensed; that license does not grant rights to M2 AI names or branding.
 
 ## Architecture and testing
 

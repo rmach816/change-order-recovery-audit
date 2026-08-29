@@ -4,12 +4,13 @@
   "name": "change-order-recovery-audit",
   "display_name": "Change Order Recovery Audit",
   "icon": "assets/icon.png",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Find cited change-order records that may be unpriced, unsigned, aging, contradictory, or apparently unbilled.",
   "long_description": "A private, read-only second-opinion audit for one construction project folder. Project files stay on the user's computer. Results require human review and do not determine entitlement or guarantee recovery.",
   "author": {
     "name": "M2 AI, LLC",
-    "email": "richard@m2ai.tech"
+    "email": "richard@m2ai.tech",
+    "url": "https://github.com/rmach816"
   },
   "server": {
     "type": "node",
@@ -45,7 +46,7 @@
     }
   ],
   "keywords": ["construction", "change orders", "billing", "audit", "recovery"],
-  "license": "Apache-2.0",
+  "license": "MIT",
   "privacy_policies": ["https://recoveryaudit.m2ai.tech/privacy"],
   "compatibility": {
     "claude_desktop": ">=1.0.0",
