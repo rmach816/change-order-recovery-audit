@@ -1,4 +1,4 @@
-import { asString, authorizeSubscription, configFrom, json, portalIdempotencyKey, problem, readBody, stripeRequest } from "./_lib.js";
+import { asString, authorizeSubscription, configFrom, json, portalIdempotencyKey, problem, readBody, recoveryTokenFor, stripeRequest } from "./_lib.js";
 
 export async function POST(request: Request): Promise<Response> {
   if (request.method !== "POST") return problem(405, "Method not allowed");
@@ -17,6 +17,7 @@ export async function POST(request: Request): Promise<Response> {
     const price = plan === "monthly" ? config.monthlyPriceId : config.annualPriceId;
     const form = new URLSearchParams({
       mode: "subscription",
+      allow_promotion_codes: "true",
       "line_items[0][price]": price,
       "line_items[0][quantity]": "1",
       success_url: `${config.siteUrl}/activate?session_id={CHECKOUT_SESSION_ID}`,
@@ -41,6 +42,11 @@ export async function POST(request: Request): Promise<Response> {
     });
     const url = session ? asString(session.url, 2048) : undefined;
     return url ? json({ url }) : problem(502, "Unable to open billing management");
+  }
+  if (action === "recovery_key") {
+    const authorized = await authorizeSubscription(body, config, { expectedPurpose: "recovery_key" });
+    if (!authorized || !authorized.decision.allowed) return problem(403, "Access could not be verified");
+    return json({ recoveryKey: recoveryTokenFor(authorized.subscription, config) });
   }
   return problem(400, "Invalid billing action");
 }

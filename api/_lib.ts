@@ -5,7 +5,7 @@ import { normalizeSubscription, type EntitlementDecision } from "../src/subscrip
 
 export const MAX_REQUEST_BYTES = 4096;
 const MAX_CLOCK_SKEW_MS = 60_000;
-export type InstallationProofPurpose = "license_validate" | "billing_portal";
+export type InstallationProofPurpose = "license_validate" | "billing_portal" | "recovery_key";
 
 export interface AppConfig {
   mode: "test" | "live";

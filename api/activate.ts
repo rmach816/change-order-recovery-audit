@@ -1,8 +1,11 @@
 import { asString, configFrom, recoveryTokenFor, stripeRequest, subscriptionMatchesConfiguration } from "./_lib.js";
 
 function page(message: string, recoveryKey?: string): Response {
+  const keyFileText = recoveryKey
+    ? `Change Order Recovery Audit — Recovery key\r\n\r\n${recoveryKey}\r\n\r\nKeep this file somewhere secure. The key is only needed to restore access on another computer or during support recovery; the purchasing computer activates automatically.\r\n`
+    : "";
   const keySection = recoveryKey
-    ? `<section class="backup"><h2>Backup for another computer</h2><p>Save this recovery key somewhere secure. You do not need it on this purchasing computer.</p><code>${recoveryKey}</code></section>`
+    ? `<section class="backup"><h2>Backup for another computer</h2><p>Download this recovery key file and keep it somewhere secure. You do not need it on this purchasing computer.</p><p><a class="button" href="data:text/plain;charset=utf-8,${encodeURIComponent(keyFileText)}" download="change-order-recovery-audit-recovery-key.txt">Download recovery key file</a></p><code>${recoveryKey}</code></section>`
     : "";
   const body = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta http-equiv="Cache-Control" content="no-store"><title>Activation | Change Order Recovery Audit</title><link rel="stylesheet" href="/site.css"></head><body><main class="activation"><p class="eyebrow">CHANGE ORDER RECOVERY AUDIT</p><h1>${message}</h1><p>Return to Claude Desktop and rerun the audit. This computer activates automatically.</p>${keySection}<p><a href="/">Back to the product page</a></p></main><script>history.replaceState(null,'',location.pathname)</script></body></html>`;
   return new Response(body, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "referrer-policy": "no-referrer", "x-robots-tag": "noindex" } });

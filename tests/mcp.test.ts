@@ -38,7 +38,7 @@ test("exposes the audit and billing-management workflows and returns structured 
     await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
 
     const listed = await client.listTools();
-    assert.deepEqual(listed.tools.map((tool) => tool.name), ["audit_change_order_folder", "manage_change_order_subscription"]);
+    assert.deepEqual(listed.tools.map((tool) => tool.name), ["audit_change_order_folder", "manage_change_order_subscription", "show_recovery_key"]);
     assert.equal(listed.tools[0]?.annotations?.readOnlyHint, true);
     assert.equal(listed.tools[0]?.annotations?.destructiveHint, false);
     assert.equal(listed.tools[0]?.annotations?.openWorldHint, false);

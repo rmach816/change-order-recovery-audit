@@ -4,7 +4,7 @@
   "name": "change-order-recovery-audit",
   "display_name": "Change Order Recovery Audit",
   "icon": "assets/icon.png",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Find cited change-order records that may be unpriced, unsigned, aging, contradictory, or apparently unbilled.",
   "long_description": "A private, read-only second-opinion audit for one construction project folder. Project files stay on the user's computer. Results require human review and do not determine entitlement or guarantee recovery.",
   "author": {
@@ -38,6 +38,10 @@
     {
       "name": "manage_change_order_subscription",
       "description": "Open the Stripe billing portal for the purchasing computer without reading the configured project folder."
+    },
+    {
+      "name": "show_recovery_key",
+      "description": "Retrieve this subscription's recovery key from the purchasing computer for backup or activating another computer."
     }
   ],
   "keywords": ["construction", "change orders", "billing", "audit", "recovery"],

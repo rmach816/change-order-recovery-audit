@@ -16,7 +16,7 @@ interface ClaimLeaseTiming {
   schedule?: (callback: () => Promise<void>, intervalMs: number) => { cancel(): void };
 }
 
-export type InstallationProofPurpose = "license_validate" | "billing_portal";
+export type InstallationProofPurpose = "license_validate" | "billing_portal" | "recovery_key";
 
 export interface LocalState {
   version: 1;
@@ -331,6 +331,45 @@ export async function openBillingPortal(options: {
     return { url };
   } catch {
     return { message: "Unable to open billing management. Check your connection and try again." };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export interface RecoveryKeyResult {
+  recoveryKey?: string;
+  message?: string;
+}
+
+export async function fetchRecoveryKey(options: {
+  store?: StateStore;
+  environment?: NodeJS.ProcessEnv;
+  fetcher?: typeof fetch;
+  now?: Date;
+} = {}): Promise<RecoveryKeyResult> {
+  const environment = options.environment ?? process.env;
+  const serviceUrl = environment.LICENSE_SERVICE_URL?.trim();
+  const mode = environment.APP_MODE?.trim();
+  if (!serviceUrl || (mode !== "test" && mode !== "live")) return { message: "Licensing service is not configured." };
+  const store = options.store ?? createFileStateStore(environment);
+  const state = await loadOrCreateState(store);
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+  try {
+    const proof = createInstallationProof(state, mode, "recovery_key", options.now ?? new Date());
+    const response = await (options.fetcher ?? fetch)(new URL("/api/billing", serviceUrl), {
+      method: "POST",
+      headers: { "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify({ action: "recovery_key", mode, ...proof }),
+      signal: controller.signal
+    });
+    if (!response.ok) return { message: "An active subscription is required to retrieve the recovery key." };
+    const payload: unknown = await response.json();
+    const recoveryKey = typeof payload === "object" && payload !== null && "recoveryKey" in payload && typeof payload.recoveryKey === "string" ? payload.recoveryKey : undefined;
+    if (!recoveryKey) return { message: "An active subscription is required to retrieve the recovery key." };
+    return { recoveryKey };
+  } catch {
+    return { message: "Unable to retrieve the recovery key. Check your connection and try again." };
   } finally {
     clearTimeout(timer);
   }

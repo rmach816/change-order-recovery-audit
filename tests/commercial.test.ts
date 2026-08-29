@@ -482,6 +482,73 @@ test("portal accepts only a portal-purpose proof and sends Stripe a nonce-derive
   }
 });
 
+test("recovery-key action accepts only a recovery-purpose proof and returns a verifiable key", async () => {
+  const savedEnvironment = { ...process.env };
+  const savedFetch = globalThis.fetch;
+  try {
+    Object.assign(process.env, {
+      APP_MODE: "test", SITE_URL: "https://recoveryaudit.m2ai.tech", STRIPE_SECRET_KEY: "sk_test_example",
+      STRIPE_MONTHLY_PRICE_ID: "price_monthly", STRIPE_ANNUAL_PRICE_ID: "price_annual", LICENSE_SIGNING_SECRET: "secret"
+    });
+    const store = memoryStore();
+    const state = await loadOrCreateState(store);
+    const proof = createInstallationProof(state, "test", "recovery_key");
+    const subscription = {
+      id: "sub_recovery", customer: "cus_recovery", status: "active", current_period_end: Math.floor(Date.now() / 1000) + 86_400,
+      metadata: { cora_activation_id: proof.activationId, cora_public_key: proof.publicKey, cora_mode: "test" },
+      items: { data: [{ price: { id: "price_monthly" } }] }
+    };
+    globalThis.fetch = async (input) => {
+      const url = String(input);
+      if (url.includes("/search?")) return Response.json({ data: [subscription] });
+      return Response.json(subscription);
+    };
+    const accepted = await billingHandler(new Request("https://example.test/api/billing", {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "recovery_key", mode: "test", ...proof })
+    }));
+    assert.equal(accepted.status, 200);
+    const payload = await accepted.json() as { recoveryKey?: string };
+    assert.ok(payload.recoveryKey && payload.recoveryKey.length > 0);
+    const verified = verifyRecoveryToken(payload.recoveryKey, "secret");
+    assert.equal(verified?.subscriptionId, "sub_recovery");
+    const wrongPurpose = createInstallationProof(state, "test", "billing_portal");
+    let calls = 0;
+    globalThis.fetch = async () => { calls += 1; return Response.json({}); };
+    const rejected = await billingHandler(new Request("https://example.test/api/billing", {
+      method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "recovery_key", mode: "test", ...wrongPurpose })
+    }));
+    assert.equal(rejected.status, 403);
+    assert.equal(calls, 0);
+  } finally {
+    globalThis.fetch = savedFetch;
+    for (const key of Object.keys(process.env)) if (!(key in savedEnvironment)) delete process.env[key];
+    Object.assign(process.env, savedEnvironment);
+  }
+});
+
+test("recovery-key MCP tool returns the key without touching an invalid project path", async () => {
+  const store = memoryStore();
+  let calls = 0;
+  const server = createServer(join(tmpdir(), "cora-recovery-never-read"), {
+    stateStore: store,
+    environment: { LICENSE_SERVICE_URL: "https://recoveryaudit.m2ai.tech", APP_MODE: "test" } as NodeJS.ProcessEnv,
+    fetcher: async () => { calls += 1; return Response.json({ recoveryKey: "RK1.example-recovery-key" }); }
+  });
+  const client = new Client({ name: "commercial-recovery-tool-test", version: "1.0.0" });
+  const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
+  try {
+    await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);
+    const result = await client.callTool({ name: "show_recovery_key", arguments: {} });
+    assert.notEqual(result.isError, true);
+    const text = (result.content as Array<{ type: string; text?: string }>).find((item) => item.type === "text")?.text ?? "";
+    assert.match(text, /RK1\.example-recovery-key/);
+    assert.equal(calls, 1);
+  } finally {
+    await client.close();
+    await server.close();
+  }
+});
+
 test("billing-management MCP tool returns the portal URL without touching an invalid project path", async () => {
   const store = memoryStore();
   let calls = 0;
@@ -586,7 +653,7 @@ test("static public routes carry accurate metadata and crawler boundaries", asyn
   assert.match(landing, /Download for Windows/);
   assert.match(landing, /fetch\("\/api\/checkout"/);
   assert.doesNotMatch(landing, /fetch\("\/api\/billing"/);
-  assert.match(landing, /github\.com\/rmach816\/change-order-recovery-audit\/releases\/download\/v1\.0\.2\/claude-change-order-recovery-audit\.mcpb/);
+  assert.match(landing, /github\.com\/rmach816\/change-order-recovery-audit\/releases\/latest\/download\/claude-change-order-recovery-audit\.mcpb/);
   assert.match(landing, /src="\/icon\.png"/);
   assert.match(landing, /Skip to main content/);
   assert.match(robots, /Disallow: \/api\//);
@@ -599,7 +666,7 @@ test("static public routes carry accurate metadata and crawler boundaries", asyn
   assert.equal(manifest.server.mcp_config.env.LICENSE_SERVICE_URL, "https://recoveryaudit.m2ai.tech");
   assert.equal(manifest.server.mcp_config.env.APP_MODE, "live");
   assert.equal(manifest.manifest_version, "0.4");
-  assert.equal(manifest.version, "1.0.3");
+  assert.equal(manifest.version, "1.0.4");
   assert.deepEqual(manifest.server.mcp_config.args.slice(1), [
     "--project-root=${user_config.project_directory}",
     "--license-service-url=https://recoveryaudit.m2ai.tech",
@@ -607,7 +674,7 @@ test("static public routes carry accurate metadata and crawler boundaries", asyn
   ]);
   assert.ok(!manifest.server.mcp_config.args.some((argument: string) => argument.includes("license_key")));
   assert.deepEqual(manifest.privacy_policies, ["https://recoveryaudit.m2ai.tech/privacy"]);
-  assert.deepEqual(manifest.tools.map((tool) => tool.name), ["audit_change_order_folder", "manage_change_order_subscription"]);
+  assert.deepEqual(manifest.tools.map((tool) => tool.name), ["audit_change_order_folder", "manage_change_order_subscription", "show_recovery_key"]);
   assert.match(readme, /^## Privacy Policy$/m);
   assert.match(readme, /https:\/\/recoveryaudit\.m2ai\.tech\/privacy/);
   assert.match(readme, /Stripe processes subscription and billing information/);

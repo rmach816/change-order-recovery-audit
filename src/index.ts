@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 import { z } from "zod";
 
 import { auditFolder } from "./audit.js";
-import { authorizeAudit, createFileStateStore, openBillingPortal, type EntitlementResult, type StateStore } from "./entitlement.js";
+import { authorizeAudit, createFileStateStore, fetchRecoveryKey, openBillingPortal, type EntitlementResult, type StateStore } from "./entitlement.js";
 import type { AuditResult } from "./types.js";
 
 function formatResult(result: AuditResult): string {
@@ -90,7 +90,7 @@ function activationUrl(state: { activationId: string; publicKey: string }, envir
 export function createServer(projectRoot: string, options: CreateServerOptions = {}): McpServer {
   const server = new McpServer({
     name: "change-order-recovery-audit",
-    version: "1.0.3"
+    version: "1.0.4"
   });
 
   server.registerTool(
@@ -173,6 +173,35 @@ export function createServer(projectRoot: string, options: CreateServerOptions =
       return {
         content: [{ type: "text" as const, text: `Open the secure Stripe billing portal: ${result.url}` }],
         structuredContent: { url: result.url }
+      };
+    }
+  );
+  server.registerTool(
+    "show_recovery_key",
+    {
+      title: "Show the recovery key for this subscription",
+      description: "Retrieve this subscription's recovery key using a fresh installation signature from the purchasing computer, for backup or activating another computer. Requires an active subscription and does not read the configured project folder.",
+      inputSchema: {},
+      annotations: {
+        readOnlyHint: true,
+        destructiveHint: false,
+        idempotentHint: true,
+        openWorldHint: true
+      }
+    },
+    async () => {
+      const result = await fetchRecoveryKey({
+        store: options.stateStore,
+        environment: options.environment,
+        fetcher: options.fetcher,
+        now: options.now
+      });
+      if (!result.recoveryKey) {
+        return { isError: true, content: [{ type: "text" as const, text: result.message ?? "The recovery key could not be retrieved." }] };
+      }
+      return {
+        content: [{ type: "text" as const, text: `Recovery key (store it somewhere secure): ${result.recoveryKey}` }],
+        structuredContent: { recoveryKey: result.recoveryKey }
       };
     }
   );
