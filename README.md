@@ -4,7 +4,7 @@ A local, read-only Windows Claude Desktop extension that reviews one user-select
 
 ## Download
 
-Download the versioned release asset from the [v1.0.2 release](https://github.com/rmach816/change-order-recovery-audit/releases/tag/v1.0.2), then install the `.mcpb` in Claude Desktop on Windows.
+Download the [latest release asset](https://github.com/rmach816/change-order-recovery-audit/releases/latest/download/claude-change-order-recovery-audit.mcpb), then install the `.mcpb` in Claude Desktop on Windows.
 
 ## Commercial v1.0 boundary
 

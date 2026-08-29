@@ -668,7 +668,7 @@ test("static public routes carry accurate metadata and crawler boundaries", asyn
   assert.equal(manifest.server.mcp_config.env.LICENSE_SERVICE_URL, "https://recoveryaudit.m2ai.tech");
   assert.equal(manifest.server.mcp_config.env.APP_MODE, "live");
   assert.equal(manifest.manifest_version, "0.4");
-  assert.equal(manifest.version, "1.0.5");
+  assert.equal(manifest.version, "1.0.6");
   assert.equal(manifest.license, "MIT");
   assert.equal(manifest.author.url, "https://github.com/rmach816");
   assert.deepEqual(manifest.server.mcp_config.args.slice(1), [
@@ -685,6 +685,7 @@ test("static public routes carry accurate metadata and crawler boundaries", asyn
   assert.match(readme, /Vercel hosts the licensing endpoints/);
   assert.match(readme, /richard@m2ai\.tech/);
   assert.match(readme, /source is MIT-licensed/);
+  assert.match(readme, /releases\/latest\/download\/claude-change-order-recovery-audit\.mcpb/);
   assert.doesNotMatch(readme, /\.\.\/\.\.\/docs\//);
   assert.match(terms, /Texas law/);
   assert.match(terms, /Fort Bend County, Texas/);
